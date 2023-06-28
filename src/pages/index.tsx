@@ -7,6 +7,8 @@ import { useKeenSlider } from 'keen-slider/react'
 import 'keen-slider/keen-slider.min.css'
 import { stripe } from "../lib/stripe"
 import Stripe from "stripe"
+import { useState } from "react"
+import { Arrow } from '../components/Arrow'
 
 interface HomeProps {
     products: {
@@ -18,24 +20,40 @@ interface HomeProps {
 }
 
 export default function Home({products}: HomeProps) {
-    const [sliderRef] = useKeenSlider({
+    const [currentSlide, setCurrentSlide] = useState(0)
+    const [loaded, setLoaded] = useState(false)
+    const [sliderRef, instanceRef] = useKeenSlider<HTMLDivElement>({
         slides: {
             perView: 3,
             spacing: 48,
+        },
+        initial: 0,
+        slideChanged(slider) {
+            setCurrentSlide(slider.track.details.rel)
+        },
+        created() {
+            setLoaded(true)
         }
     })
+    console.log('38',instanceRef?.current?.track.details.slides.length)
+    console.log('current slide',instanceRef?.current?.track.details.rel)
 
     return (
         <>
             <Head>
                 <title>Home | Ignite Shop</title>
             </Head>
-           <HomeContainer ref={sliderRef} className="keen-slider">
+           <HomeContainer>
+            <div ref={sliderRef} className="keen-slider">
                {products.map(product => {
                 return (
-                    <Link href={`/product/${product.id}`} key={product.id} prefetch={false}>
+                    <Link key={product.id} href={`/product/${product.id}`}  prefetch={false}>
                         <Product className="keen-slider__slide">
-                        <Image src={product.imageUrl} width={520} height={480} alt="" />
+                        <Image 
+                            src={product.imageUrl} 
+                            width={520} 
+                            height={480} 
+                            alt="" />
                         <footer>
                             <strong>{product.name}</strong>
                             <span>{product.price}</span>
@@ -44,6 +62,24 @@ export default function Home({products}: HomeProps) {
                     </Link>
                 )
                })}
+               {loaded && instanceRef.current && (
+                    <>
+                        <Arrow
+                            left
+                            onClick={(e: any) =>
+                            e.stopPropagation() || instanceRef.current?.prev()
+                            }
+                            disabled={currentSlide === 0}
+                        />
+                        <Arrow
+                            onClick={(e: any) =>
+                            e.stopPropagation() || instanceRef.current?.next()
+                            }
+                            disabled={currentSlide === 1}
+                        />
+                    </>
+               )}
+               </div>
             </HomeContainer>
         </>
     )
